@@ -1,43 +1,52 @@
 /// The purpose of this program is to take data input by
 /// the user within one thread, and to then pass that data to
 /// an overhead data structure which allows a second thread
-/// to display and then delete the data
+/// to display and then delete the data given
 
 #include <iostream>
 #include <thread>
-#include <mutex> ///To ensure data isn't overridden
+#include <mutex>
 
-struct data_node ///Designed as a queue
+struct data_node ///Holds the user input
 {
-    ///Since the data will pass out
-    ///of scope after construction,
-    ///we need to dynamically
-    ///allocate the data given
-    ///to ensure proper access
+    /// Since the data will pass out
+    /// of scope after construction,
+    /// we need to allocate the data
+    /// given to ensure proper access
 
-    char** data;
+    char data[25];
 
-    data_node(char* c);
-    data_node* next_node;
+    data_node(char c[]);
 
-    ///The destructor is
-    ///necessary due to the
-    ///dynamically allocated
-    ///data
+    data_node* next_node; ///Currently useless
 
     ~data_node();
 };
 
-data_node::data_node(char* c): data(new char*(c)), next_node(0){}
-
 data_node::~data_node()
 {
-    delete data;
-    data = 0;
+    /// The below deletion causes a cascade
+    /// style deletion of data_node's,
+    /// ensuring that should the head_node
+    /// be deleted at any point, all
+    /// data_node's will be properly freed
+
+    delete next_node;
+
     next_node = 0;
 }
 
-struct head_node ///The overhead structure
+data_node::data_node(char c[]): next_node(0)
+{
+    for(int i = 0; c[i]; i++)
+    {
+        data[i] = c[i];
+    }
+}
+
+///The overhead structure for data_node's
+
+struct head_node
 {
     head_node();
     head_node(char* data);
@@ -56,9 +65,10 @@ head_node::~head_node()
     first_node = 0;
 }
 
-bool head_node::addData(char* data) ///Returns a bool to check if successful
+bool head_node::addData(char data[]) ///Returns a bool to check if successful
 {
     data_node* temp = first_node;
+
     if(temp != 0) ///If first_node is assigned
     {
         while((*temp).next_node != 0) ///Purposely designed as a queue
@@ -100,55 +110,79 @@ void head_node::nodeHandled()
 
 void dataInput(std::mutex& mx, head_node& HN) ///Grabs user input
 {
-    char* data;
-    char ary[25];
-    std::cout << "Please input a character string or value: ";
-    std::cin >> ary;
-    mx.lock();
-    data = ary;
-    HN.addData(data); ///Create a data_node and attach it to HN
-    mx.unlock();
+    char data[25];
+    char choice;
+    std::cout << "Thread " << std::this_thread::get_id() << " reached\n";
+    while(true)
+    {
+        std::cout << "\nDo you wish to display your string values so far (Y/N)? ";
+        std::cin >> choice;
+        while(true)
+        {
+            if(choice == 'Y' || choice == 'y')
+            {
+                goto ex;
+            }
+            else if (choice == 'N' || choice == 'n')
+            {
+                break;
+            }
+            else
+            {
+                std::cout << "\nPlease input a valid choice\n";
+                std::cout << "\nDo you wish to display your string values so far (Y/N)? ";
+                std::cin >> choice;
+            }
+        }
+        std::cout << "\nThen please input a character string or value: ";
+        std::cin >> data;
+        mx.lock();
+        HN.addData(data); ///Create a data_node and attach it to HN
+        mx.unlock();
+    }
+    ex:
+        return;
 }
 
 void displayData(std::mutex& mx, head_node& HN) ///Displays user input
 {
     bool exit = false;
+    std::cout << "\nThread " << std::this_thread::get_id() << " reached\n\n";
+    std::cout << "You typed:\n";
     while(!exit)
     {
-
-        /// For some reason, the code below detects that
-        /// a value is stored at head_node's first_node
-        /// (leading to the reasoning that the first thread
-        /// worked), but fails to properly display it.
-
         if(HN.first_node != 0)
         {
+            /// While the below lock is unnecessary
+            /// (since this code block relies on the
+            /// first thread to execute properly), it
+            /// is still good practice to use locks
+            /// anyways.
+
             mx.lock();
 
-            std::cout << "Second thread reached\n";
-            std::cout << "You typed: ";
-            std::cout << *(*HN.first_node).data; ///Display data_node's data
-            std::cout << "\nThe memory address of the data is: ";
-            std::cout << (*HN.first_node).data;
+            std::cout << (*HN.first_node).data << std::endl; ///Display data_node's data
 
             HN.nodeHandled(); ///Delete data_node
 
             mx.unlock();
-
+        }
+        else
+        {
             exit = true;
         }
     }
 }
 void threadHandle() ///Head thread
 {
-    using namespace std;
+    std::cout << "Thread " << std::this_thread::get_id() << " created\n\n";
 
-    mutex mx; ///To prevent data racing
-    head_node node;
+    std::mutex mx; ///To prevent data racing
+    head_node node; ///Overhead node
 
-    thread grabData{dataInput, ref(mx), ref(node)};
+    std::thread grabData{dataInput, std::ref(mx), std::ref(node)};
     grabData.join();
-    thread processData{displayData, ref(mx), ref(node)};
+    std::thread processData{displayData, std::ref(mx), std::ref(node)};
     processData.join();
 }
 
@@ -159,6 +193,7 @@ int main()
     threader.join();
 
     char c;
+    std::cout << std::endl;
     std::cin >> c; ///To have the program wait
 
     return 0;
