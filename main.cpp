@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <chrono>
 #include <math.h>
 #define pi 3.14159265358979323846
 
@@ -7,7 +8,17 @@ void mainGame();
 
 int main ()
 {
+
+    /*
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point rof = std::chrono::system_clock::now();
+    std::cout << std::chrono::duration_cast<std::chrono::seconds>(rof - now).count();
+    */
+
     mainGame();
+
+
+
     return 0;
 }
 
@@ -53,29 +64,40 @@ void mainGame()
     //player perfectly fine, apparently
 
     //Player playerTwo (200, 200);
+    std::chrono::system_clock::time_point rof = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point ter;
 
     while(winmain.isOpen())
     {
-        winmain.clear(sf::Color::Black);
+        ter = std::chrono::system_clock::now();
 
-        winmain.draw(player.handleMove());
-        player.handleMoveAmount();
+        //The following locks the window refresh
+        //rate to 62.5 frames per second
 
-        //winmain.draw(playerTwo.handleMove());
-        //playerTwo.handleMoveAmount();
-
-        while(winmain.pollEvent(event))
+        if((std::chrono::duration_cast<std::chrono::milliseconds>(ter - rof).count()) >= 16)
         {
-            switch(event.type)
+            rof = std::chrono::system_clock::now();
+
+            winmain.clear(sf::Color::Black);
+            winmain.draw(player.handleMove());
+            player.handleMoveAmount();
+
+            //winmain.draw(playerTwo.handleMove());
+            //playerTwo.handleMoveAmount();
+
+            while(winmain.pollEvent(event))
             {
-            case sf::Event::Closed:
-                winmain.close();
-                break;
-            default:
-                break;
+                switch(event.type)
+                {
+                case sf::Event::Closed:
+                    winmain.close();
+                    break;
+                default:
+                    break;
+                }
             }
+            winmain.display();
         }
-        winmain.display();
     }
 
 }
