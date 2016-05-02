@@ -8,17 +8,7 @@ void mainGame();
 
 int main ()
 {
-
-    /*
-    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-    std::chrono::system_clock::time_point rof = std::chrono::system_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::seconds>(rof - now).count();
-    */
-
     mainGame();
-
-
-
     return 0;
 }
 
@@ -26,8 +16,9 @@ class Player
 {
 public:
 
-    explicit Player(int initX = 0, int initY = 0);
-    sf::Text& handleMove();
+    explicit Player(float initX = 0.0, float initY = 0);
+
+    sf::Sprite& handleMove();
     void handleMoveAmount();
 
 protected:
@@ -37,20 +28,18 @@ protected:
     float posX, posY;
     float changeX = 0, changeY = 0;
 
-    unsigned int rof = 8224; ///Symbol for the player
-
-    sf::Text text;
-    sf::Font font;
+    sf::Sprite sprite;
+    sf::Texture texture;
 };
 
-Player::Player(int initX, int initY):
+Player::Player(float initX, float initY):
     posX(initX), posY(initY)
 {
-    font.loadFromFile("mainfont.ttf");
-    text.setString(rof);
-    text.setPosition(posX, posY);
-    text.setFont(font);
-    text.setCharacterSize(50.0);
+    texture.loadFromFile("ship_block.jpg");
+    sprite.setTexture(texture);
+    sprite.setPosition(posX, posY);
+    sprite.setRotation(0);
+    sprite.setOrigin(19.0, 25.0);
 }
 
 void mainGame()
@@ -58,12 +47,10 @@ void mainGame()
     sf::RenderWindow winmain (sf::VideoMode(500,500),"Main");
     sf::Event event;
 
-    Player player(250, 250);
+    Player player(250.0, 250.0);
 
-    //The game handles a second
-    //player perfectly fine, apparently
+    //Used to lock window refresh rate
 
-    //Player playerTwo (200, 200);
     std::chrono::system_clock::time_point rof = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point ter;
 
@@ -71,8 +58,9 @@ void mainGame()
     {
         ter = std::chrono::system_clock::now();
 
-        //The following locks the window refresh
-        //rate to 62.5 frames per second
+        //The following if statement locks
+        //the window refresh rate to a max of
+        //62.5 frames per second (1000/16 = 62.5)
 
         if((std::chrono::duration_cast<std::chrono::milliseconds>(ter - rof).count()) >= 16)
         {
@@ -81,9 +69,6 @@ void mainGame()
             winmain.clear(sf::Color::Black);
             winmain.draw(player.handleMove());
             player.handleMoveAmount();
-
-            //winmain.draw(playerTwo.handleMove());
-            //playerTwo.handleMoveAmount();
 
             while(winmain.pollEvent(event))
             {
@@ -102,7 +87,7 @@ void mainGame()
 
 }
 
-sf::Text& Player::handleMove()
+sf::Sprite& Player::handleMove()
 {
     if(moveAmt)
     {
@@ -124,17 +109,24 @@ sf::Text& Player::handleMove()
         changeY = 0;
     }
 
-    changeX > 5 ? changeX = 5 : changeX = changeX;
-    changeY > 5 ? changeY = 5 : changeY = changeY;
+    //Limits speed, but causes the ship to
+    //move akwardly due to the aspect ratio
+    //making the ship appear to move faster
+    //along one axis at max X,Y speed
+
+    //changeX > 5 ? changeX = 5 : changeX = changeX;
+    //changeY > 5 ? changeY = 5 : changeY = changeY;
 
     posX += changeX, posY += changeY;
 
-    std::cout << posX << " " << posY << std::endl;
+    //Debug; send position to console
 
-    text.setPosition(posX, posY);
-    text.setRotation(angle);
+    //std::cout << posX << " " << posY << std::endl;
 
-    return text;
+    sprite.setPosition(posX, posY);
+    sprite.setRotation(angle);
+
+    return sprite;
 }
 
 void Player::handleMoveAmount()
@@ -156,7 +148,7 @@ void Player::handleMoveAmount()
     }
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
     {
-        angle - turnAmount < 0 ? angle = 359.5 : angle -= turnAmount;
+        angle - turnAmount < 0 ? angle = 359 : angle -= turnAmount;
         std::cout << angle << std::endl;
     }
 }
