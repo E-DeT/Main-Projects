@@ -8,24 +8,13 @@ int main(int argc, char* argv[])
 }
 void Fibonacci()
 {
-	int* p_One = new int(0);
-	int* p_Two = new int(1);
-	bool isOne = true;
-	cout << *p_One << ", " << *p_Two << ", ";
+	int first = 0, second = 1, n = 0;
+	std::cout << first << " ";
 	for(int i = 0; i < 25; i++)
 	{
-		if(isOne)
-		{
-			*p_One = (*p_One + *p_Two);
-			isOne = false;
-			cout << *p_One << ", ";
-		}
-		else if(!isOne)
-		{
-			*p_Two = (*p_One + *p_Two);
-			isOne = true;
-			cout << *p_Two << ", ";
-		}
-		
+		std::cout << n << " ";
+		n = first + second;
+		first = second;
+		second = n;
 	}
 }
