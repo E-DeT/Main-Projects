@@ -4,6 +4,7 @@
 //Cout is overloaded to accept node keys
 
 #include <iostream>
+#include <thread>
 
 using namespace std;
 
@@ -17,7 +18,7 @@ struct List //Holds address of first and last nodes
 struct rof_node //Generic node
 {
 	int key;
-	struct rof_node *next_node, *prev_node;
+	rof_node *next_node, *prev_node;
 	~rof_node();
 };
 
@@ -36,12 +37,12 @@ List::~List()
 	first_node = 0; last_node = 0;
 }
 
-ostream& operator<<(ostream& os, struct List& _list) //Display list keys (going forwards)
+ostream& operator<<(ostream& os, List& _list) //Display list keys (going forwards)
 {	
 	//If _list has an initalized main_list, and main_list has more than one node
 	if(_list.main_list && _list.main_list != _list.last_node)
 	{
-		struct rof_node *temp = (_list.main_list);
+		rof_node *temp = (_list.main_list);
 		while(temp != _list.last_node)
 		{
 			os << (*temp).key << endl;
@@ -63,8 +64,7 @@ ostream& operator<<(ostream& os, struct List& _list) //Display list keys (going 
 
 void List::alloc_LList(int num_nodes) //Allocates nodes
 {
-	struct rof_node *this_node;
-	
+	rof_node *this_node;
 	if(num_nodes > 0) //Create first node
 	{
 		this_node = new rof_node;
@@ -85,15 +85,20 @@ void List::alloc_LList(int num_nodes) //Allocates nodes
 		(*this_node).prev_node = last_node, (*this_node).next_node = 0, (*this_node).key = i;
 		last_node = this_node;
 	}
-	
+	cout << "This thread is: " <<this_thread::get_id() << endl;
+}
+void hal()
+{
+	cout << "Hallo\n";
 }
 
 int main(int argc, char* argv[])
 {
 	List list;
-	list.alloc_LList(5);
+	thread t1{[&list]{list.alloc_LList(10);}}; //Experimenting with multi-threading
+	t1.join(); //Wait for t1 to finish
+	//list.alloc_LList(10);
 	cout << list;
-	cout << "\n\nLyra still best pone";
-	getchar();
+	//getchar();
 	return 0;
 }
